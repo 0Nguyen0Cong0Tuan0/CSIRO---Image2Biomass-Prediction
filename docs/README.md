@@ -41,7 +41,9 @@ This means that instead of calculating R² separately for each target and then a
 
 ### **R² Calculation**
 The weighted coefficient of determination $R^2_w$ is calculated as:
+
 $$R^2_w = 1 - \frac{\sum_j w_j(y_j - \hat{y}_j)^2}{\sum_j w_j(y_j - \bar{y}_w)^2}$$
+
 where $\bar{y}_w = \frac{\sum_j w_j y_j}{\sum_j w_j}$
 ***Residual Sum of Squares*** $SS_\text{res}$
 $$SS_\text{res} = \sum_j w_j (y_j - \hat{y}_j)^2$$
@@ -64,7 +66,6 @@ The valid `target` names are: `Dry_Green_g`, `Dry_Dead_g`, `Dry_Clover_g`, `GDM_
 Your file must contain ***one row per (image, target) pair***, i.e., 5 rows for each image in the test set.
 
 ```csv
-csv
 sample_id,target
 ID1001187975__Dry_Green_g,0.0
 ID1001187975__Dry_Dead_g,0.0
@@ -82,6 +83,7 @@ ID1001187976__Dry_Total_g,0.0
 ## **Competition Overview**
 
 In this competition, your task is to use pasture images to predict five key biomass components critical for grazing and feed management:
+
 - ***Dry green vegetation (excluding clover)***
 - ***Dry dead material***
 - ***Dry clover biomass***
@@ -98,27 +100,27 @@ Directory containing training images (JPEG), referenced by image_path.
 Directory reserved for test images (hidden at scoring time); paths in test.csv point here.
 
 **`train.csv`**
-    - `sample_id` — Unique identifier for each training sample (image).
-    - `image_path` — Relative path to the training image (e.g., `images/ID1098771283.jpg`).
-    - `Sampling_Date` — Date of sample collection.
-    - `State` — Australian state where sample was collected.
-    - `Species` — Pasture species present, ordered by biomass (underscore-separated).
-    - `Pre_GSHH_NDVI` — Normalized Difference Vegetation Index (GreenSeeker) reading.
-    - `Height_Ave_cm` — Average pasture height measured by falling plate (cm).
-    - `target_name` — Biomass component name for this row (`Dry_Green_g`, `Dry_Dead_g`, `Dry_Clover_g`, `GDM_g`, or `Dry_Total_g`).
-    - `target` — Ground-truth biomass value (grams) corresponding to target_name for this image.
+- `sample_id` — Unique identifier for each training sample (image).
+- `image_path` — Relative path to the training image (e.g., `images/ID1098771283.jpg`).
+- `Sampling_Date` — Date of sample collection.
+- `State` — Australian state where sample was collected.
+- `Species` — Pasture species present, ordered by biomass (underscore-separated).
+- `Pre_GSHH_NDVI` — Normalized Difference Vegetation Index (GreenSeeker) reading.
+- `Height_Ave_cm` — Average pasture height measured by falling plate (cm).
+- `target_name` — Biomass component name for this row (`Dry_Green_g`, `Dry_Dead_g`, `Dry_Clover_g`, `GDM_g`, or `Dry_Total_g`).
+- `target` — Ground-truth biomass value (grams) corresponding to target_name for this image.
 
 
 **`test.csv`**
-    - `sample_id` — Unique identifier for each prediction row (one row per image–target pair).
-    - `image_path` — Relative path to the image (e.g., `test/ID1001187975.jpg`).
-    - `target_name` — Name of the biomass component to predict for this row. One of: `Dry_Green_g`, `Dry_Dead_g`, `Dry_Clover_g`, `GDM_g`, `Dry_Total_g`.
+- `sample_id` — Unique identifier for each prediction row (one row per image–target pair).
+- `image_path` — Relative path to the image (e.g., `test/ID1001187975.jpg`).
+- `target_name` — Name of the biomass component to predict for this row. One of: `Dry_Green_g`, `Dry_Dead_g`, `Dry_Clover_g`, `GDM_g`, `Dry_Total_g`.
 
 The test set contains over 800 images.
 
 `sample_submission.csv`
-    - `sample_id` — Copy from test.csv; one row per requested (image, target_name) pair.
-    - `target` — Your predicted biomass value (grams) for that sample_id.
+- `sample_id` — Copy from test.csv; one row per requested (image, target_name) pair.
+- `target` — Your predicted biomass value (grams) for that sample_id.
 
 ***What you must predict***
 
