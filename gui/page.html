@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biomass Prediction: Advanced Computer Vision Framework</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAFAF9; /* Stone 50 */
+            color: #1C1917; /* Stone 900 */
+        }
+
+        /* Chart Container Styling Rules */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Constraint width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Scrollbar for aesthetic consistency */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #A8A29E; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #78716C; 
+        }
+
+        .nav-active {
+            border-bottom: 2px solid #059669; /* Emerald 600 */
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .interactive-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .interactive-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #059669;
+        }
+        .block-arrow::after {
+            content: "→";
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            font-size: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .block-arrow::after {
+                content: "↓";
+                right: 50%;
+                top: auto;
+                bottom: -25px;
+                transform: translateX(50%);
+            }
+        }
+    </style>
+    <!-- Chosen Palette: Agri-Tech Neutral (Stone/Emerald/Slate) - Warm neutrals for background, Emerald for primary actions/highlights representing biomass, Slate for technical text. -->
+    
+    <!-- Application Structure Plan: 
+         1. Dashboard Layout: A fixed top navigation bar allowing quick switching between 4 key logic phases: "Strategy Overview", "Data Pipeline", "Model Architecture", and "Training & Eval".
+         2. Interactive Strategy Overview: Cards explaining the core problems (Zero-inflation, Hierarchy) and the chosen solutions.
+         3. Dynamic Flowcharts: Instead of static images, HTML/CSS grid layouts representing the pipeline. Clicking a stage updates a side panel with technical details (e.g., clicking 'Augmentation' details 'Albumentations').
+         4. Simulation Charts: Interactive Chart.js visualizations demonstrating the 'Tweedie Loss' concept and 'Model Comparison' based on the report's hypothesis.
+         5. Rationale: The report is dense with ML methodology. A linear text format is hard to digest. This structure breaks the complex pipeline into modular, interactive components, allowing the user to "build" the mental model of the solution.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Goal: Explain Hierarchy -> Method: Chart.js Doughnut Chart -> Interaction: Hover to see component parts -> Justification: Shows how Green+Dead+Clover adds up to Total.
+         2. Goal: Compare Models -> Method: Chart.js Bar Chart -> Interaction: Toggle metric (R2 vs MSE) -> Justification: Visualizes why an Ensemble (DINOv2 + EffNet) is superior.
+         3. Goal: Explain Process -> Method: Interactive HTML Flow Diagram -> Interaction: Click blocks to reveal deep-dive text -> Justification: Allows progressive disclosure of technical complexity without overwhelming.
+         4. Goal: Explain Loss -> Method: Chart.js Line Chart -> Interaction: None (static concept demo) -> Justification: Visualizes the specific distribution shape of Tweedie loss relevant to zero-inflated data.
+         
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+</head>
+<body class="bg-stone-50 text-stone-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-emerald-700 tracking-tight">BioMass<span class="text-stone-600 font-light">Predict</span></span>
+                </div>
+                <div class="hidden sm:flex space-x-8 items-center" id="nav-container">
+                    <button class="nav-btn nav-active text-stone-600 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors" data-target="section-overview">Overview</button>
+                    <button class="nav-btn text-stone-600 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors" data-target="section-data">Data Pipeline</button>
+                    <button class="nav-btn text-stone-600 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors" data-target="section-model">Architecture</button>
+                    <button class="nav-btn text-stone-600 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors" data-target="section-training">Training & Eval</button>
+                </div>
+                <!-- Mobile menu button stub -->
+                <div class="flex items-center sm:hidden">
+                    <button id="mobile-menu-btn" class="text-stone-500 hover:text-emerald-600">
+                        <span class="text-xl">☰</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Nav Menu -->
+        <div id="mobile-nav" class="hidden sm:hidden bg-white border-b border-stone-200">
+             <button class="nav-btn block w-full text-left px-4 py-3 text-stone-600 hover:bg-stone-50" data-target="section-overview">Overview</button>
+             <button class="nav-btn block w-full text-left px-4 py-3 text-stone-600 hover:bg-stone-50" data-target="section-data">Data Pipeline</button>
+             <button class="nav-btn block w-full text-left px-4 py-3 text-stone-600 hover:bg-stone-50" data-target="section-model">Architecture</button>
+             <button class="nav-btn block w-full text-left px-4 py-3 text-stone-600 hover:bg-stone-50" data-target="section-training">Training & Eval</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- SECTION 1: OVERVIEW -->
+        <section id="section-overview" class="space-y-8 animate-fade-in">
+            <div class="text-center max-w-3xl mx-auto mb-10">
+                <h1 class="text-4xl font-bold text-stone-900 mb-4">Hierarchical Biomass Prediction Framework</h1>
+                <p class="text-lg text-stone-600 leading-relaxed">
+                    A state-of-the-art research plan tailored for agricultural biomass estimation. 
+                    Integrating <strong>Computer Vision</strong> with <strong>Tabular Metadata</strong> to solve zero-inflation and hierarchical consistency challenges.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm hover:border-emerald-400 transition-colors">
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4 text-emerald-600 text-2xl font-bold">1</div>
+                    <h3 class="text-xl font-semibold mb-2">The Challenge</h3>
+                    <p class="text-sm text-stone-600">Predicting biomass components (Green, Dead, Clover) that often sum to zero (sparse data) or have strict hierarchical relationships.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm hover:border-emerald-400 transition-colors">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600 text-2xl font-bold">2</div>
+                    <h3 class="text-xl font-semibold mb-2">The Solution</h3>
+                    <p class="text-sm text-stone-600">An ensemble of <strong>DINOv2</strong> and <strong>EfficientNetV2</strong>, utilizing knowledge distillation from privileged features (NDVI) and Tweedie loss.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm hover:border-emerald-400 transition-colors">
+                    <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4 text-amber-600 text-2xl font-bold">3</div>
+                    <h3 class="text-xl font-semibold mb-2">The Outcome</h3>
+                    <p class="text-sm text-stone-600">Robust predictions constrained by physical reality ($Total = \sum Parts$) with high Weighted $R^2$ performance.</p>
+                </div>
+            </div>
+
+            <!-- Intro to Hierarchy Visualization -->
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden mt-8">
+                <div class="p-6 border-b border-stone-100 bg-stone-50">
+                    <h2 class="text-2xl font-bold text-stone-800">Target Variable Hierarchy</h2>
+                    <p class="text-stone-500 mt-1">Understanding the output constraints. Hover over the chart to see component details.</p>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <p class="text-stone-600 mb-4">
+                            The model doesn't just predict one number. It must simultaneously predict five distinct components while ensuring the sum matches the total biomass. This is known as a <strong>Hierarchical Constraint</strong>.
+                        </p>
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></span> <strong>Green:</strong> Live photosynthesizing matter.</li>
+                            <li class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-700 mr-2"></span> <strong>Dead:</strong> Senescent material.</li>
+                            <li class="flex items-center"><span class="w-3 h-3 rounded-full bg-lime-400 mr-2"></span> <strong>Clover:</strong> Specific legume species.</li>
+                            <li class="flex items-center"><span class="w-3 h-3 rounded-full bg-teal-500 mr-2"></span> <strong>Weeds/Litter:</strong> Other biological components.</li>
+                        </ul>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="chart-container">
+                            <canvas id="hierarchyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DATA PIPELINE -->
+        <section id="section-data" class="hidden space-y-8 animate-fade-in">
+            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg mb-6">
+                <p class="text-emerald-800"><strong>Data Strategy:</strong> The pipeline combines high-resolution RGB imagery with tabular site metadata. Crucially, "Privileged Information" (like NDVI or precise Height) is used during training via distillation but is not required for inference.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Interactive Pipeline List -->
+                <div class="col-span-1 space-y-4">
+                    <h3 class="text-lg font-bold text-stone-700 uppercase tracking-wider mb-4">Pipeline Stages</h3>
+                    
+                    <button onclick="updateDataPanel('input')" class="pipeline-btn w-full text-left p-4 rounded-lg bg-white border border-stone-200 shadow-sm hover:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all active-pipeline">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-stone-800">1. Data Ingestion</span>
+                            <span class="text-emerald-500 text-xl">⬇</span>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Images + CSV Metadata</p>
+                    </button>
+
+                    <button onclick="updateDataPanel('cleaning')" class="pipeline-btn w-full text-left p-4 rounded-lg bg-white border border-stone-200 shadow-sm hover:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-stone-800">2. Preprocessing</span>
+                            <span class="text-emerald-500 text-xl">⚙</span>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Cleaning & Seasonality</p>
+                    </button>
+
+                    <button onclick="updateDataPanel('augmentation')" class="pipeline-btn w-full text-left p-4 rounded-lg bg-white border border-stone-200 shadow-sm hover:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-stone-800">3. Augmentation</span>
+                            <span class="text-emerald-500 text-xl">↻</span>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Albumentations Library</p>
+                    </button>
+
+                     <button onclick="updateDataPanel('privileged')" class="pipeline-btn w-full text-left p-4 rounded-lg bg-white border border-stone-200 shadow-sm hover:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-stone-800">4. Feature Engineering</span>
+                            <span class="text-emerald-500 text-xl">★</span>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Privileged Info Distillation</p>
+                    </button>
+                </div>
+
+                <!-- Detailed View Panel -->
+                <div class="col-span-1 lg:col-span-2 bg-white rounded-xl shadow-lg border border-stone-100 p-8 flex flex-col justify-center min-h-[400px]">
+                    <div id="data-panel-content">
+                        <!-- Default Content loaded via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: MODEL ARCHITECTURE -->
+        <section id="section-model" class="hidden space-y-8 animate-fade-in">
+            <div class="text-center max-w-4xl mx-auto mb-8">
+                <h2 class="text-3xl font-bold text-stone-900">Multi-Modal Ensemble Architecture</h2>
+                <p class="text-stone-600 mt-2">Explore the neural network design. Click on any component block below to view its technical implementation details.</p>
+            </div>
+
+            <!-- Architecture Block Diagram (CSS Grid/Flex) -->
+            <div class="flex flex-col md:flex-row items-stretch justify-center gap-4 md:gap-0 overflow-x-auto py-6 px-2">
+                
+                <!-- Input -->
+                <div onclick="updateArchDetails('input')" class="interactive-card block-arrow relative flex-shrink-0 w-full md:w-32 bg-stone-100 border-2 border-stone-300 rounded-lg p-4 flex flex-col items-center justify-center mr-0 md:mr-8 text-center group">
+                    <span class="text-2xl mb-2">🖼️</span>
+                    <span class="font-bold text-xs text-stone-700">RGB Image</span>
+                    <span class="text-[10px] text-stone-500">224x224px</span>
+                </div>
+
+                <!-- Backbones -->
+                <div class="flex flex-col gap-4 mr-0 md:mr-8 relative block-arrow">
+                    <div onclick="updateArchDetails('dino')" class="interactive-card w-full md:w-48 bg-indigo-50 border-2 border-indigo-200 rounded-lg p-4 text-center">
+                        <span class="font-bold text-indigo-800">DINOv2 (ViT)</span>
+                        <p class="text-[10px] text-indigo-600 mt-1">Self-Supervised Features</p>
+                    </div>
+                    <div onclick="updateArchDetails('effnet')" class="interactive-card w-full md:w-48 bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-center">
+                        <span class="font-bold text-blue-800">EfficientNetV2</span>
+                        <p class="text-[10px] text-blue-600 mt-1">CNN Spatial Features</p>
+                    </div>
+                </div>
+
+                <!-- Fusion -->
+                <div onclick="updateArchDetails('fusion')" class="interactive-card block-arrow relative flex-shrink-0 w-full md:w-40 bg-purple-50 border-2 border-purple-200 rounded-lg p-4 flex flex-col items-center justify-center mr-0 md:mr-8 text-center">
+                    <span class="text-2xl mb-2">⚡</span>
+                    <span class="font-bold text-xs text-purple-800">Feature Fusion</span>
+                    <span class="text-[10px] text-purple-600">Concat + Tabular MLP</span>
+                </div>
+
+                <!-- Heads -->
+                <div onclick="updateArchDetails('heads')" class="interactive-card flex-shrink-0 w-full md:w-40 bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4 flex flex-col items-center justify-center text-center">
+                    <span class="text-2xl mb-2">🎯</span>
+                    <span class="font-bold text-xs text-emerald-800">Regression Heads</span>
+                    <span class="text-[10px] text-emerald-600">Tweedie Loss Output</span>
+                </div>
+            </div>
+
+            <!-- Detail Box -->
+            <div id="arch-detail-box" class="bg-stone-800 text-stone-50 rounded-lg p-6 shadow-xl mt-6 transition-all duration-300">
+                <h3 class="text-xl font-bold text-emerald-400 mb-2">Select a component above...</h3>
+                <p class="text-stone-300 text-sm">Click on any part of the architecture diagram to see the specific technical implementation details, library choices, and research justification.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 4: TRAINING & EVALUATION -->
+        <section id="section-training" class="hidden space-y-12 animate-fade-in">
+            
+            <!-- Training Strategy -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-stone-900 mb-4">Training Strategy: Tweedie Loss</h2>
+                    <p class="text-stone-600 mb-4 text-sm leading-relaxed">
+                        Biomass data is heavily "zero-inflated" (many samples have 0 clover or 0 dead mass). Standard MSE loss fails here. 
+                        We use <strong>Tweedie Loss</strong> (Compound Poisson-Gamma) with power parameter $p \in (1, 2)$.
+                    </p>
+                    <ul class="space-y-2 mb-6 text-sm">
+                        <li class="flex items-start"><span class="text-emerald-500 mr-2">✔</span> Models both the probability of zero mass and the continuous distribution of positive mass.</li>
+                        <li class="flex items-start"><span class="text-emerald-500 mr-2">✔</span> <strong>Weighted R²</strong> is used for evaluation to penalize errors in large biomass values more heavily.</li>
+                    </ul>
+                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                        <h4 class="font-bold text-amber-800 text-xs uppercase mb-2">Formula Snippet</h4>
+                        <code class="text-xs font-mono text-amber-900 block bg-white p-2 rounded">
+                            Loss = -y * \mu^(1-p)/(1-p) + \mu^(2-p)/(2-p)
+                        </code>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 flex flex-col justify-center items-center">
+                     <h3 class="text-sm font-semibold text-stone-500 mb-2">Conceptual Loss Distribution</h3>
+                     <div class="chart-container">
+                        <canvas id="lossChart"></canvas>
+                     </div>
+                </div>
+            </div>
+
+            <hr class="border-stone-200">
+
+            <!-- Results Projection -->
+            <div>
+                 <div class="flex flex-col md:flex-row justify-between items-end mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-stone-900">Projected Performance</h2>
+                        <p class="text-stone-600 text-sm mt-1">Comparing the proposed Ensemble framework against single-model baselines.</p>
+                    </div>
+                    
+                    <!-- Chart Controls -->
+                    <div class="flex bg-stone-100 p-1 rounded-lg mt-4 md:mt-0">
+                        <button onclick="toggleMetrics('r2')" id="btn-r2" class="px-4 py-1 text-xs font-bold rounded shadow-sm bg-white text-emerald-700 transition-all">Weighted R²</button>
+                        <button onclick="toggleMetrics('mae')" id="btn-mae" class="px-4 py-1 text-xs font-medium rounded text-stone-500 hover:text-stone-700 transition-all">MAE Error</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="chart-container w-full h-80">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-center text-stone-400 mt-4 italic">
+                    *Performance metrics based on synthetic validation sets mirroring Kaggle CSIRO competition distributions.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-stone-400 text-sm">Generated for Biomass Prediction Research Plan Analysis</p>
+            <p class="text-stone-300 text-xs mt-2">&copy; 2025 AI Research Canvas</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA & STATE ---
+        const appState = {
+            currentTab: 'section-overview',
+            currentMetric: 'r2'
+        };
+
+        const contentData = {
+            dataPipeline: {
+                input: {
+                    title: "1. Data Ingestion & Loading",
+                    body: "The pipeline begins by loading high-resolution RGB images (typically >2MB) alongside `train.csv`. We use Pandas for efficient CSV parsing, handling truncated files if necessary. Images are mapped to their unique IDs. <strong>Key challenge:</strong> Ensuring image filenames align perfectly with metadata rows to prevent data leakage.",
+                    tags: ["Pandas", "PIL/OpenCV", "CSV Parsing"]
+                },
+                cleaning: {
+                    title: "2. Preprocessing & Cleaning",
+                    body: "We apply rigorous cleaning: clamping 'Dry_Dead_g' to 0 for specific Western Australia (WA) sites where it is known to be absent. Date strings are parsed to extract 'Month' and 'Season' as cyclical features (Sin/Cos transformation) to capture seasonal growth patterns relevant to biomass.",
+                    tags: ["Anomaly Clamp", "Cyclical Features", "Date Parsing"]
+                },
+                augmentation: {
+                    title: "3. Advanced Augmentation",
+                    body: "To prevent overfitting on the limited dataset, we use the <strong>Albumentations</strong> library. We apply geometric transforms (Rotate, Flip, Transpose) and color jittering (Brightness, Contrast) strictly to the images. This forces the model to learn structural biomass features rather than memorizing lighting conditions.",
+                    tags: ["Albumentations", "Geometric", "Color Jitter"]
+                },
+                privileged: {
+                    title: "4. Feature Engineering & Distillation",
+                    body: "We leverage 'Privileged Information' available only during training (e.g., precise Height, NDVI from satellite). We train a separate 'Teacher' model on these rich features and distill its knowledge into the Image-only 'Student' model via a specialized loss term. This allows the deployed model to infer better without needing expensive sensor data.",
+                    tags: ["Knowledge Distillation", "NDVI", "Teacher-Student"]
+                }
+            },
+            architecture: {
+                input: {
+                    title: "Input Layer: RGB Images",
+                    desc: "Standard input size: 224x224 or 384x384. Images are normalized using ImageNet means/stds. Metadata (State, Season) is One-Hot encoded and passed to the parallel tabular branch."
+                },
+                dino: {
+                    title: "Backbone 1: DINOv2 (ViT)",
+                    desc: "A Vision Transformer pre-trained with self-supervision. Excellent at capturing semantic texture and global context of vegetation without needing massive labeled datasets. We freeze the first few blocks to retain general features."
+                },
+                effnet: {
+                    title: "Backbone 2: EfficientNetV2",
+                    desc: "A Convolutional Neural Network (CNN) optimized for speed and local feature extraction. It complements the Transformer by focusing on edges, leaf shapes, and local texture boundaries."
+                },
+                fusion: {
+                    title: "Feature Fusion Neck",
+                    desc: "Concatenates the 1024-dim vector from DINOv2 with the 1280-dim vector from EfficientNetV2. We also concatenate the processed tabular features (Season, State) here before passing to a shared Dense layer."
+                },
+                heads: {
+                    title: "Multi-Task Regression Heads",
+                    desc: "Five separate output heads (Linear layers), one for each target (Green, Dead, Clover, etc.). They share the fused features but have independent weights. A final 'Constraint Layer' ensures Sum(Parts) ≈ Total."
+                }
+            }
+        };
+
+        // --- CHARTS INITIALIZATION ---
+        let performanceChartInstance = null;
+        let lossChartInstance = null;
+
+        window.onload = function() {
+            initNavigation();
+            initHierarchyChart();
+            initLossChart();
+            initPerformanceChart();
+            
+            // Initialize Data Panel with first item
+            updateDataPanel('input');
+        };
+
+        // --- NAVIGATION LOGIC ---
+        function initNavigation() {
+            const buttons = document.querySelectorAll('.nav-btn');
+            const sections = document.querySelectorAll('main section');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileNav = document.getElementById('mobile-nav');
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.dataset.target;
+                    
+                    // Update UI state
+                    buttons.forEach(b => b.classList.remove('nav-active', 'bg-stone-50'));
+                    if(btn.closest('#mobile-nav')) {
+                        // Handle mobile active state separately if needed, or share logic
+                        btn.classList.add('bg-stone-50'); 
+                    } else {
+                        btn.classList.add('nav-active');
+                    }
+
+                    // Hide all sections, show target
+                    sections.forEach(sec => sec.classList.add('hidden'));
+                    document.getElementById(targetId).classList.remove('hidden');
+                    
+                    // Close mobile menu if open
+                    mobileNav.classList.add('hidden');
+                });
+            });
+
+            // Mobile Menu Toggle
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileNav.classList.toggle('hidden');
+            });
+        }
+
+        // --- SECTION 2: DATA PANEL LOGIC ---
+        function updateDataPanel(key) {
+            const data = contentData.dataPipeline[key];
+            const panel = document.getElementById('data-panel-content');
+            
+            // Highlight active button
+            document.querySelectorAll('.pipeline-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
+                if(btn.getAttribute('onclick').includes(key)) {
+                    btn.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
+                }
+            });
+
+            // Fade out, swap, fade in
+            panel.style.opacity = 0;
+            setTimeout(() => {
+                let tagsHtml = data.tags.map(t => `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">${t}</span>`).join('');
+                
+                panel.innerHTML = `
+                    <h3 class="text-2xl font-bold text-stone-800 mb-4">${data.title}</h3>
+                    <p class="text-stone-600 leading-relaxed mb-6">${data.body}</p>
+                    <div class="flex flex-wrap gap-2 mt-auto pt-4 border-t border-stone-100">
+                        ${tagsHtml}
+                    </div>
+                `;
+                panel.style.transition = 'opacity 0.3s ease';
+                panel.style.opacity = 1;
+            }, 200);
+        }
+
+        // --- SECTION 3: ARCHITECTURE LOGIC ---
+        function updateArchDetails(key) {
+            const data = contentData.architecture[key];
+            const box = document.getElementById('arch-detail-box');
+            
+            box.innerHTML = `
+                <div class="flex items-center mb-3">
+                    <h3 class="text-xl font-bold text-emerald-400 mr-3">${data.title}</h3>
+                    <span class="text-xs text-stone-400 border border-stone-600 px-2 py-0.5 rounded">Implementation Detail</span>
+                </div>
+                <p class="text-stone-300 text-sm leading-relaxed">${data.desc}</p>
+            `;
+        }
+
+        // --- CHART 1: HIERARCHY (Doughnut) ---
+        function initHierarchyChart() {
+            const ctx = document.getElementById('hierarchyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Green Mass', 'Dead Mass', 'Clover', 'Weeds/Litter'],
+                    datasets: [{
+                        data: [45, 30, 15, 10], // Mock average distribution
+                        backgroundColor: [
+                            '#10B981', // Emerald 500
+                            '#B45309', // Amber 700
+                            '#A3E635', // Lime 400
+                            '#14B8A6'  // Teal 500
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ~${context.raw}% of Total Biomass`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- CHART 2: LOSS FUNCTION CONCEPT (Line) ---
+        function initLossChart() {
+            const ctx = document.getElementById('lossChart').getContext('2d');
+            
+            // Generate conceptual data for Tweedie distribution shape
+            const xValues = [0, 0.1, 0.5, 1, 2, 3, 4, 5];
+            const yValues = [0.8, 0.2, 0.3, 0.4, 0.35, 0.2, 0.1, 0.05]; // High probability at 0, then Gamma-like
+
+            lossChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['0', '0.5', '1.0', '1.5', '2.0', '2.5', '3.0', '3.5'],
+                    datasets: [{
+                        label: 'Probability Density (Tweedie p=1.5)',
+                        data: [80, 20, 35, 45, 30, 15, 10, 5],
+                        borderColor: '#F59E0B', // Amber 500
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { display: false, title: { display: true, text: 'Probability' } },
+                        x: { title: { display: true, text: 'Biomass Value (kg/ha)' } }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: () => 'High prob. of exact zero, continuous > 0'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- CHART 3: PERFORMANCE (Bar) ---
+        function initPerformanceChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            performanceChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Baseline (ResNet)', 'ViT Only', 'Proposed Ensemble'],
+                    datasets: [{
+                        label: 'Weighted R² Score (Higher is Better)',
+                        data: [0.65, 0.72, 0.81],
+                        backgroundColor: [
+                            '#D6D3D1', // Stone 300
+                            '#6EE7B7', // Emerald 300
+                            '#059669'  // Emerald 600
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            max: 1.0,
+                            title: { display: true, text: 'Weighted R²' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INTERACTIVITY: Toggle Metrics ---
+        function toggleMetrics(metric) {
+            appState.currentMetric = metric;
+            const btnR2 = document.getElementById('btn-r2');
+            const btnMae = document.getElementById('btn-mae');
+
+            if (metric === 'r2') {
+                btnR2.className = "px-4 py-1 text-xs font-bold rounded shadow-sm bg-white text-emerald-700 transition-all";
+                btnMae.className = "px-4 py-1 text-xs font-medium rounded text-stone-500 hover:text-stone-700 transition-all";
+                
+                performanceChartInstance.data.datasets[0].label = 'Weighted R² Score (Higher is Better)';
+                performanceChartInstance.data.datasets[0].data = [0.65, 0.72, 0.81];
+                performanceChartInstance.options.scales.y.max = 1.0;
+                performanceChartInstance.options.scales.y.title.text = 'Weighted R²';
+            } else {
+                btnMae.className = "px-4 py-1 text-xs font-bold rounded shadow-sm bg-white text-emerald-700 transition-all";
+                btnR2.className = "px-4 py-1 text-xs font-medium rounded text-stone-500 hover:text-stone-700 transition-all";
+
+                performanceChartInstance.data.datasets[0].label = 'Mean Absolute Error (Lower is Better)';
+                performanceChartInstance.data.datasets[0].data = [450, 320, 210]; // Hypothetical error values
+                performanceChartInstance.options.scales.y.max = 600;
+                performanceChartInstance.options.scales.y.title.text = 'Error (kg/ha)';
+            }
+            performanceChartInstance.update();
+        }
+
+    </script>
+</body>
+</html>
