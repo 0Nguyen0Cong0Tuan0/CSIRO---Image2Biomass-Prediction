@@ -1,0 +1,42 @@
+======================================================================
+CSIRO BIOMASS COMPETITION - REPORT
+======================================================================
+
+EXECUTIVE SUMMARY
+----------------------------------------------------------------------
+Dataset: 357 pasture images analyzed
+States: ['Tas', 'NSW', 'WA', 'Vic']
+Date Range: NaT to NaT
+
+KEY FINDING 1: Western Australia Dead Matter Anomaly
+----------------------------------------------------------------------
+WA Dead Biomass:    mean=0.00g, zeros=100.0%
+Other Dead Biomass: mean=13.23g, zeros=2.5%
+RECOMMENDATION: Apply state-conditional post-processing for Dead predictions
+
+ANOMALY DETECTION RESULTS
+----------------------------------------------------------------------
+Detected: 19 anomalous samples (5.32%)
+
+CLUSTER ANALYSIS
+----------------------------------------------------------------------
+Optimal clusters: 5
+Silhouette score: 0.306
+
+TOP PREDICTIVE FEATURES (for Dry_Total_g)
+----------------------------------------------------------------------
+  Height_Ave_cm                            0.3990
+  Biomass_per_Height                       0.2930
+  NDVI_Height_Interaction                  0.2619
+  Pre_GSHH_NDVI                            0.0137
+  Dead_Ratio                               0.0133
+  Green_Ratio                              0.0104
+  Clover_Ratio                             0.0027
+  State_Encoded                            0.0022
+  Has_Ryegrass                             0.0021
+  Species_Count                            0.0010
+  Has_Clover                               0.0007
+  Month_cos                                0.0000
+  Month_sin                                0.0000
+  DayOfYear                                0.0000
+  Month                                    0.0000
